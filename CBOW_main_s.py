@@ -50,12 +50,12 @@ N_tokens_test_all = len(tokens_test_all)
 
 # Subsets of the entire training and entire test datasets will be used
 # Number of tokens in this training subset
-N_tokens_train = 1000    # Must be less than or equal to N_tokens_train_all
+N_tokens_train = 10000    # Must be less than or equal to N_tokens_train_all
 # Tokens of the training subset
 tokens_train = tokens_train_all[:N_tokens_train]    
 
 # Number of tokens in the test subset
-N_tokens_test = 1000   # Must be less than or equal to N_tokens_train_all
+N_tokens_test = 10000   # Must be less than or equal to N_tokens_train_all
 # Tokens of the training subset
 tokens_test = tokens_test_all[:N_tokens_test]
 
@@ -286,6 +286,7 @@ print(test_context)
 print("Test target word = " + test_target + "\nPredicted word = "
       + test_target_p)
 
+# Creating word embedding vector for target word
 test_target_vec = to_one_hot_vec(test_target, vocab_with_idx)
 test_embed = model1.get_embedding(test_target_vec)
 print("Test target word embedding:")
@@ -293,6 +294,9 @@ print(test_embed)
 
 #%% Testing on test dataset
 N_test = len(test_dataset)
+
+# Checking whether the predicted target word matches the actual target word
+# Done by comparing predicted and actual vocabulary indices
 correct_count = 0
 for i in range(N_test):
     context_vec_list, target_idx = test_dataset[i]
@@ -342,6 +346,8 @@ similarities = torch.zeros([V])
 for i in range(V):
     similarities[i] = cos_dist(embed4_p, embeddings[i, :])
 
+# Ideally, embed4_p == embed4 (or at least the similarity of embed4 with
+# embed4_p will be maximum).
 # Finding word of maximum similarity with embed4_p
 max_sim, max_idx = similarities.max(dim=0)
 word4_p = idx_with_vocab[max_idx.item()]

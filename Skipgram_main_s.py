@@ -7,7 +7,7 @@ Using a large dataset (WikiText2 or Sherlock Holmes)
 Not considering variable context length (i.e. here, I have made R = C = N)
 
 The word embedding vector will be one column of the weight matrix (projection
-matrix) plus the bias of the projection layer (linear1).
+matrix) of the projection layer (linear1) only. No bias will be added.
 
 @author: hp
 """
@@ -124,11 +124,12 @@ class Skipgram(nn.Module):
         return out
     
     
-    def get_embedding(self, input_vec):
-        """Returns the word vector of the word corresponding to the one-hot
-        encoded 1-of-V vector input_vec"""
-        embed = self.linear1(input_vec)
-        return embed
+    def get_embedding(self, input_idx):
+       """Returns the word embedding vector of the word corresponding to the
+       vocabulary index input_idx"""
+       # input_idx is an int
+       embed = self.linear1.weight[:, input_idx].detach()
+       return embed
 
         
 N = 4   # Context length. N words before target word, N words after target word
@@ -177,16 +178,6 @@ def to_one_hot_vec(word, vocab_with_idx):
     return vec
 
 
-def context_to_vec(words, vocab_with_idx):
-    vec = torch.tensor([])
-    for w in words:
-        vec_w = to_one_hot_vec(w, vocab_with_idx)
-        vec = torch.cat([vec, vec_w], dim=1)
-        
-    return vec
-
-
-
 #%% Dataset
 class ContextTargetDataset(Dataset):
     def __init__(self, context_list, target_list):
@@ -199,10 +190,9 @@ class ContextTargetDataset(Dataset):
     
     
     def __getitem__(self, idx):
-        """Returns a list of 2*N one-hot encoded (1-of-V) vectors
-        corresponding to the idx-th context words in the dataset, and also
-        returns the vocabulary index of the idx-th target word in the
-        dataset."""
+        """Returns a list of 2*N vocabulary indices corresponding to the idx-th
+        context words in the dataset, and also returns the 1-of-V one-hot
+        encoded vector of the idx-th target word in the dataset."""
         context = self.context_list[idx]
         target = self.target_list[idx]
         if target in vocab_with_idx:
@@ -311,7 +301,7 @@ print("Test target word = " + test_target)
 print("Predicted context words:")
 print(test_context_p)
 
-test_embed = model1.get_embedding(test_target_vec)
+test_embed = model1.get_embedding(vocab_with_idx[test_target])
 print("Test target word embedding:")
 print(test_embed)
 
@@ -347,8 +337,7 @@ print(f"\nAccuracy on test dataset = {test_accuracy*100}%\n")
 #%% Embeddings for all words in the vocabulary
 embeddings = torch.zeros([V, D])
 for i in range(V):
-    word_vec = to_one_hot_vec(idx_with_vocab[i], vocab_with_idx)
-    embeddings[i,:] = model1.get_embedding(word_vec)
+    embeddings[i,:] = model1.get_embedding(i)
 
 #%% Simple syntactic-semantic similarity test
 # word1:word2 and word3:word4

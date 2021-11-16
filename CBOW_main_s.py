@@ -5,7 +5,8 @@ Continous Bag-of-Words
 Using a large dataset (WikiText2 or Sherlock Holmes)
 
 The word embedding vector will be one column of the weight matrix (projection
-matrix) plus the bias of the projection layer (linear1)
+matrix) of the projection layer (linear1) only. No bias will be added.
+
 @author: hp
 """
 
@@ -123,11 +124,11 @@ class CBOW(nn.Module):
         return out
     
     
-    def get_embedding(self, input_vec):
-        """Returns the word vector of the word corresponding to the one-hot
-        encoded 1-of-V vector input_vec"""
-        # input_vec is 1-by-V
-        embed = self.linear1(input_vec).detach()
+    def get_embedding(self, input_idx):
+        """Returns the word embedding vector of the word corresponding to the
+        vocabulary index input_idx"""
+        # input_idx is an int
+        embed = self.linear1.weight[:, input_idx].detach()
         return embed
         
         
@@ -216,7 +217,7 @@ train_dataset = ContextTargetDataset(context_list_train, target_list_train)
 test_dataset = ContextTargetDataset(context_list_test, target_list_test)
 
 # Sparse tensors don't work with batch sizes
-train_loader = DataLoader(train_dataset, batch_size=None)
+train_loader = DataLoader(train_dataset, batch_size=None)   # Not used yet
 
 
 #%% CBOW model implementation and training
@@ -287,8 +288,7 @@ print("Test target word = " + test_target + "\nPredicted word = "
       + test_target_p)
 
 # Creating word embedding vector for target word
-test_target_vec = to_one_hot_vec(test_target, vocab_with_idx)
-test_embed = model1.get_embedding(test_target_vec)
+test_embed = model1.get_embedding(test_target_idx)
 print("Test target word embedding:")
 print(test_embed)
 
@@ -312,8 +312,7 @@ print(f"\nAccuracy on test dataset = {test_accuracy*100}%\n")
 #%% Embeddings for all words in the vocabulary
 embeddings = torch.zeros([V, D])
 for i in range(V):
-    word_vec = to_one_hot_vec(idx_with_vocab[i], vocab_with_idx)
-    embeddings[i,:] = model1.get_embedding(word_vec)
+    embeddings[i,:] = model1.get_embedding(i)
 
 #%% Simple syntactic-semantic similarity test
 # word1:word2 and word3:word4
